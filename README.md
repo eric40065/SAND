@@ -19,3 +19,6 @@ To run it on server, use `submit Trans_run_HighDim_G_DiffSelfAtt_l2w_False_False
 
 ### Model configuration
 Line 50 -- 53 defines the model.
+
+## Some results
+![Imputation of different methods](https://github.com/eric40065/FunctionalTransformer/blob/main/Rplot.png)
