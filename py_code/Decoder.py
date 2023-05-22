@@ -49,8 +49,7 @@ class TransformerDecoder(nn.Module):
         # input e_output size: (batch_num, num_hiddens, seq_len)
         # input e_mask size:   (batch_num, seq_len)
         # input d_mask size:   (batch_num, seq_len)
-        # e_mask = e_m_mh
-        # d_mask = d_m_mh
+        # y_t, e_output, e_mask, d_mask = y_t, e_output, e_m_mh, d_m_mh
         
         y_t2 = self.ff(self.norm1(self.broadcast(y_t.transpose(-1, -2))))
         for i, blk in enumerate(self.blks):

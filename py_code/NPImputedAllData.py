@@ -11,12 +11,12 @@ from pathlib import Path
 
 split = (90, 5, 5)
 data_name_list = list(("/LowDim_E", "/HighDim_E", "/LowDim_T", "/HighDim_T", "/LowDim_G", "/HighDim_G", "/UK")) # "UK" "Framingham" "LowDim_G" "HighDim_G" "LowDim_NG" "HighDim_NG"
-data_name_list = ["/HighDim_E"]
+data_name_list = ["/UK"]
 iidt = False
 
 ## Define model
 denoise_method = "None"
-output_structure = "CNP" # "Vanilla" "SelfAtt" "DiffSelfAtt"
+output_structure = "CNP"
 output_structure_folder = "/" + output_structure
 
 my_computer = True
@@ -119,10 +119,10 @@ for counter_col, data_name in enumerate(data_name_list):
                 plt.subplots_adjust(left=0.2, right=0.95, top=0.95, bottom=0.1)
                 plt.gca().set_ylim(ylim);
                 plt.scatter(Tnow, Xnow, label = "obs.");
-                plt.plot(t_true, pred_mean[i, :], label = "original");
-                plt.fill_between(t_true, pred_mean[i, :] - 1.28 * pred_sd[i, :], pred_mean[i, :] + 1.28 * pred_sd[i, :], alpha=0.2, color = "blue");
+                plt.plot(t_true, pred_mean[i, :], label = "CNP");
+                # plt.fill_between(t_true, pred_mean[i, :] - 1.28 * pred_sd[i, :], pred_mean[i, :] + 1.28 * pred_sd[i, :], alpha=0.2, color = "blue");
                 if data_name != "/Framingham":
-                    plt.plot(t_true, X_den[index, :], label = "true curve");
+                    plt.plot(t_true, X_den[index, :], label = "True");
                 
                 plt.ylabel("CNP", fontsize = 32)
                 plt.legend(fontsize = 20)
@@ -134,7 +134,7 @@ for counter_col, data_name in enumerate(data_name_list):
 if not real:
     print(pd.DataFrame(error_mat_train_noi, list(("DwE", "SwE", "DwoE", "SwoE")), data_name_list) * 1000)
     print(pd.DataFrame(error_mat_test_noi, list(("DwE", "SwE", "DwoE", "SwoE")), data_name_list) * 1000)
-print("compare to ture")
+print("compare to true")
 print(pd.DataFrame(error_mat_train, list(("DwE", "SwE", "DwoE", "SwoE")), data_name_list) * 1000)
 print(pd.DataFrame(error_mat_test, list(("DwE", "SwE", "DwoE", "SwoE")), data_name_list) * 1000)
 

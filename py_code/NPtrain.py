@@ -15,7 +15,7 @@ from torch.optim import Adam
 output_structure_folder = "/CNP"
 iidt = True
 
-my_computer = True
+my_computer = False
 if my_computer:
     data_name = "/Framingham" # "UK" "Framingham" "LowDim_G" "HighDim_G" "LowDim_NG" "HighDim_NG"
     # data_is_dense, error = False, False
@@ -34,7 +34,7 @@ else:
     else:
         error = (sys.argv[3] == "True")
         cuda_device = "cuda:" + str(error * 2 + data_is_dense)
-    cuda_device = "cuda:" + (str(error + 0) if iidt else str(1 - error))
+    # cuda_device = "cuda:0"
     device = torch.device(cuda_device)
 
 denoise_method = "None"

@@ -33,17 +33,19 @@ def _attention(q, k, v, d_k, mask_multihead, Dropout = None, output_structure = 
     # mask_multihead = e_m_mh
     # mask_multihead = d_m
     scores = torch.matmul(q, k.transpose(-1, -2)) / np.sqrt(d_k) # scores size : (batch, seq_len, seq_len)
-    if output_structure == None:
-        mask_multihead = mask_multihead if isinstance(mask_multihead, int) else mask_multihead.unsqueeze(1) # mask size: (batch, 1, seq_len)
-        scores = F.softmax(scores, dim = -1) if isinstance(mask_multihead, int) else F.softmax(scores.masked_fill(mask_multihead == 0, -1e9), dim = -1)
+    if output_structure == None or output_structure == "Vanilla":
+        if mask_multihead != None:
+            mask_multihead = mask_multihead.unsqueeze(1)
+            scores = scores.masked_fill(mask_multihead == 0, -1e9)
+        scores = F.softmax(scores, dim = -1)
     elif output_structure == "SelfAtt":
-        mask_multihead = mask_multihead if isinstance(mask_multihead, int) else mask_multihead.unsqueeze(1) # mask size: (batch, 1, seq_len)
-        scores = scores if isinstance(mask_multihead, int) else scores.masked_fill(mask_multihead == 0, -1e9)
+        if mask_multihead != None:
+            mask_multihead = mask_multihead.unsqueeze(1)
+            scores = scores.masked_fill(mask_multihead == 0, -1e9)
         scores[:, range(scores.size()[1]), range(scores.size()[1])] = -1e9
         scores = F.softmax(scores, dim = -1)
     else:
-        pass
-        # scores /= v.shape[1] # scores size : (batch, seq_len, seq_len)
+        scores /= v.shape[1] # scores size : (batch, seq_len, seq_len)
     scores = Dropout(scores) if Dropout != None else scores
     return torch.matmul(scores, v)
 

@@ -35,7 +35,8 @@ class TransformerEncoder(nn.Module):
         self.embedding_drop = nn.Dropout(model_settings["dropout"])
         self.embedding_norm = Norm(model_settings["num_hiddens"], axis = -1)
         
-        self.broadcast = nn.Linear(model_settings["f_in"][0] + model_settings["num_hiddens"], model_settings["num_hiddens"], bias = True)
+        # self.broadcast = nn.Linear(model_settings["f_in"][0] + model_settings["num_hiddens"], model_settings["num_hiddens"], bias = True)
+        self.broadcast = nn.Linear(model_settings["f_in"][0], model_settings["num_hiddens"], bias = True)
         self.ff = FeedForward(model_settings["num_hiddens"], model_settings["num_hiddens"], dropout = model_settings["dropout"])
         self.norm1 = Norm(model_settings["num_hiddens"], axis = -1)
         self.norm2 = Norm(model_settings["num_hiddens"], axis = -1)
@@ -45,10 +46,11 @@ class TransformerEncoder(nn.Module):
 
     def forward(self, x, mask, emb_mask):
         # input x size    - (B, 2, seq_len)
-        only_x = x[:, 0, :].unsqueeze(-1)
-        embedded_x = self.embedding_norm(only_x + self.embedding_drop(self.embedding_atte(only_x, only_x, only_x, mask = emb_mask)))
-        all_x = torch.cat([embedded_x, x.transpose(-1, -2)], axis = -1)
-        x_ = self.ff(self.norm1(self.broadcast(all_x)))
+        # only_x = x[:, 0, :].unsqueeze(-1)
+        # embedded_x = self.embedding_norm(only_x + self.embedding_drop(self.embedding_atte(only_x, only_x, only_x, mask = emb_mask)))
+        # all_x = torch.cat([embedded_x, x.transpose(-1, -2)], axis = -1)
+        x_ = self.ff(self.norm1(self.broadcast(x.transpose(-1, -2))))
+        # x_ = self.ff(self.norm1(self.broadcast(all_x)))
         # output x size   - (B, seq_len, d)
         
         # mask = e_m_mh
