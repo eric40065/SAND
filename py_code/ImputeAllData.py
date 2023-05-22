@@ -6,12 +6,10 @@ import os
 from pathlib import Path
 import torch.nn.functional as F
 from scipy.stats import norm
-server_specified_folder = "/Users/eric/Desktop/UCD/TransFD/py_code/"
-os.chdir(server_specified_folder)
 
 ## Get the data. 
 # Options are: "HighDim_E", "LowDim_G", "HighDim_G", "LowDim_E", "LowDim_T", "HighDim_T", "UK"
-data_name = "/HighDim_E" 
+data_name = "/LowDim_T" 
 real = (data_name == "/UK") # A useful indicator that records if the data is simulated
 iidt = True
 
@@ -40,12 +38,6 @@ error_mat_train_smooth = np.zeros((2 if real else 4, len(denoise_method_list)))
 error_mat_test_smooth = np.zeros((2 if real else 4, len(denoise_method_list)))
 
 if not real:
-    error_mat_train_org_noi = np.zeros((2 if real else 4, len(denoise_method_list)))
-    error_mat_test_org_noi = np.zeros((2 if real else 4, len(denoise_method_list)))
-    error_mat_train_smooth_noi = np.zeros((2 if real else 4, len(denoise_method_list)))
-    error_mat_test_smooth_noi = np.zeros((2 if real else 4, len(denoise_method_list)))
-
-if not real:
     X_den = np.array(pd.read_csv("../Data/IID/Simulation" + data_name + "/X_full_true.csv", header = None)) ## true but with noise
     X_den_noi = np.array(pd.read_csv("../Data/IID/Simulation" + data_name + "/X_full_noise.csv", header = None)) ## true but with noise
 else:
@@ -53,7 +45,6 @@ else:
 
 for error in list((True, False)):
     for data_is_dense in list((True, False)):
-        # data_is_dense, error = True, True
         # load data
         data_type = "/dense" if data_is_dense else "/sparse"
         sparsity_error_folder = (data_type + "/w_error" if error else data_type + "/wo_error") if not real else data_type
@@ -79,7 +70,6 @@ for error in list((True, False)):
         L = len(t_true)
         counter_col = 0
         for denoise_method in denoise_method_list:
-            # denoise_method = "l2w"
             # load model
             checkpoint = torch.load("../Checkpoints" + ("/IID" if iidt else "/NonIID") + ("/RealData" if real else "/Simulation") + data_name + output_structure_folder + sparsity_error_folder + "/best_ckpts_" + str(denoise_method) + ".pth", map_location = torch.device(cuda_device))
             model = checkpoint["model"]
@@ -107,12 +97,11 @@ for error in list((True, False)):
             d_T = torch.Tensor(d_T)
             d_m_mh = torch.Tensor([[1] * L] * num_heads)
             d_m = torch.Tensor([[1] * L])
-            prob_list = np.exp((1 - torch.abs(torch.Tensor(range(-L, L + 1))/L)) * 20)
-            prob_list = prob_list/prob_list.sum() + (2e-16)
+            prob_list = torch.Tensor(np.array([np.exp((1 - torch.abs(torch.Tensor(range(-L, L + 1))/L)) * i).numpy() for i in [1, 2, 5, 10, 20, 50, 80]]))
+            prob_list = prob_list/prob_list.sum(1, keepdim = True) + (2e-16)
             
-            # i = 0
             for counter, i in enumerate(index_all):
-                if counter % 200 == 0 and my_computer:
+                if counter % 200 == 0:
                     print(counter, flush = True)
                 src_mask = [1] * m
                 src_mask[M_obs[i]:] = [0] * (m - M_obs[i])
@@ -120,7 +109,7 @@ for error in list((True, False)):
                 t = np.array(T_obs.iloc[i, :])
                 
                 e_XT = np.zeros([1, d + 1, len(t)])
-                e_XT[:, 0, :] = t
+                e_XT[:, 0, :] = t # before multiply by 100
                 for j in range(int(d/4)):
                     e_XT[0, 4*j+1, :] = np.sin(10 ** (- 4*(j + 1)/d) * t * (L - 1))
                     e_XT[0, 4*j+2, :] = np.cos(10 ** (- 4*(j + 1)/d) * t * (L - 1))
@@ -138,19 +127,29 @@ for error in list((True, False)):
                     TAs_position = np.array(e_X[0, 1, :] * (L - 1), dtype = int)
                     TAs_position = torch.Tensor(TAs_position[np.diff(np.concatenate(([-1], TAs_position))) > 0]).unsqueeze(-1)
                     [smooth, org] = model.forward(e_X, d_T, e_m_mh, e_m_mh, d_m_mh, d_m, TAs_position = TAs_position)
-                    weight = smooth[:, :, 0] * 0
-                    for j, pos in enumerate(TAs_position.squeeze(-1).long()):
-                        weight[j, :] = prob_list[(L - pos + 1):(2 * L - pos + 1)]
-                        
-                    weight = weight/torch.sum(weight, dim = 0)
-                    smooth = torch.sum(smooth * weight.unsqueeze(-1), dim = 0)
-                
+                    weight = torch.zeros(smooth.size()[0], smooth.size()[1], len(prob_list))
+                    for prob_counter, prob in enumerate(prob_list):
+                        for j, pos in enumerate(TAs_position.squeeze(-1).long()):
+                            weight[j, :, prob_counter] = prob[(L - pos + 1):(2 * L - pos + 1)]
+                            
+                    weight = weight/weight.sum(0)
+                    smooth_prob = torch.zeros(1, smooth.size()[1], smooth.size()[2], len(prob_list))
+                    for prob_counter, _ in enumerate(prob_list):
+                        smooth_prob[:, :, :, prob_counter] = torch.sum(smooth * weight[:, :, prob_counter].unsqueeze(-1), dim = 0)
                 org_pred.append(org.squeeze(0).cpu().numpy())
                 if output_structure != "Vanilla":
-                    smooth_pred.append(smooth.squeeze(0).cpu().numpy())
+                    smooth_pred.append(smooth_prob.squeeze(0).cpu().numpy())
             
             org_pred = np.array(org_pred)
             smooth_pred = np.array(smooth_pred)
+            
+            err_smooth2 = []
+            if output_structure != "Vanilla":
+                for i, index in enumerate(index_all):
+                    err_smooth2.append(np.mean(np.power(smooth_pred[i, :, 0] - X_den[index, :].reshape(-1, 1), 2), axis = 0))
+            
+            smooth_pred = np.array([smooth_pred[i, :, :, np.argmin(err_smooth2[i])] for i in range(smooth_pred.shape[0])])
+            [np.argmin(err_smooth2[i]) for i in range(smooth_pred.shape[0])]
             mat_filename = "../ImputedData" + ("/IID" if iidt else "/NonIID") + ("/RealData" if real else "/Simulation") + data_name + output_structure_folder + sparsity_error_folder + "/X_imputed_" + denoise_method + ".csv"
             np.savetxt(mat_filename, smooth_pred[:, :, 0], delimiter=",") if output_structure != "Vanilla" else np.savetxt(mat_filename, org_pred[:, :, 0], delimiter=",")
             mat_filename10 = "../ImputedData" + ("/IID" if iidt else "/NonIID") + ("/RealData" if real else "/Simulation") + data_name + output_structure_folder + sparsity_error_folder + "/X_imputed_10" + denoise_method + ".csv"
@@ -160,8 +159,6 @@ for error in list((True, False)):
             
             err_org = []
             err_smooth = []
-            err_org_noi = []
-            err_smooth_noi = []
             plt.clf()
             tmp_X = np.array(X_den)[index_all, ]
             ylim = [np.min(tmp_X), np.max(tmp_X)]
@@ -170,11 +167,7 @@ for error in list((True, False)):
                 if output_structure != "Vanilla":
                     err_smooth.append(np.mean(np.power(smooth_pred[i, :, 0] - X_den[index, :], 2)))
                 
-                if not real:
-                    err_org_noi.append(np.mean(np.power(org_pred[i, :, 0] - X_den_noi[index, :], 2)))
-                    if output_structure != "Vanilla":
-                        err_smooth_noi.append(np.mean(np.power(smooth_pred[i, :, 0] - X_den_noi[index, :], 2)))
-                if (i + 1) % 100 == 0 and index > (3000 if real else 9450):
+                if (i + 1) % 100 == 0 and index > (5000 if real else 9450):
                     Tnow = T_obs.iloc[index, :M_obs[index]]
                     Xnow = X_obs.iloc[index, :M_obs[index]]
                     
@@ -183,48 +176,37 @@ for error in list((True, False)):
                     plt.gca().set_xlim([-0.03, 1.03]);
                     plt.scatter(Tnow, Xnow, label = "obs.");
                     if output_structure == "Vanilla":
-                        # plt.plot(Tnow, org_pred[i, :len(Tnow), 0], label = "VT");
-                        # plt.fill_between(Tnow, org_pred[i, :len(Tnow), 1], org_pred[i, :len(Tnow), 2], alpha=0.12, color = "blue");
                         plt.plot(t_true, org_pred[i, :, 0], label = "VT");
                         plt.fill_between(t_true, org_pred[i, :, 1], org_pred[i, :, 2], alpha=0.12, color = "blue");
                     if output_structure != "Vanilla":
-                        # plt.plot(t_true, org_pred[i, :, 0], label = "Org");
+                        plt.plot(t_true, org_pred[i, :, 0], label = "Org");
                         plt.plot(t_true, smooth_pred[i, :, 0], label = "Self-Att" if output_structure == "SelfAtt" else "SAND");
                         gaps = (org_pred[i, :, 2] - org_pred[i, :, 1])/2
                         plt.fill_between(t_true, smooth_pred[i, :, 0] - gaps, smooth_pred[i, :, 0] + gaps, alpha=0.12, color = "blue");
                     plt.plot(t_true, X_den[index, :], label = "True", color = "orange");
-                    
+                        
                     if output_structure == "Vanilla":
                         plt.ylabel(output_structure + "/" + denoise_method, fontsize = 32)
                     else:
                         plt.ylabel(("SAND" if output_structure == "SAND" else output_structure), fontsize = 32)
                     plt.legend(fontsize = 20)
                     plt.savefig("../Plots" + ("/IID" if iidt else "/NonIID") + ("/RealData" if real else "/Simulation") + data_name + "/ImputedCurves" + sparsity_error_folder + "/" + str(i + 1) + output_structure + denoise_method + ".png")
-                    if my_computer:
-                        plt.show()
+                    plt.show()
                     plt.close()
-            
+                    
             error_mat_train_org[counter_row, counter_col] = np.mean(err_org[:len(index_training)])
             error_mat_test_org[counter_row, counter_col] = np.mean(err_org[len(index_training):])
-            if not real:
-                error_mat_train_org_noi[counter_row, counter_col] = np.mean(err_org_noi[:len(index_training)])
-                error_mat_test_org_noi[counter_row, counter_col] = np.mean(err_org_noi[len(index_training):])
             if output_structure != "Vanilla":
                 error_mat_train_smooth[counter_row, counter_col] = np.mean(err_smooth[:len(index_training)])
                 error_mat_test_smooth[counter_row, counter_col] = np.mean(err_smooth[len(index_training):])
-                if not real:
-                    error_mat_train_smooth_noi[counter_row, counter_col] = np.mean(err_smooth_noi[:len(index_training)])
-                    error_mat_test_smooth_noi[counter_row, counter_col] = np.mean(err_smooth_noi[len(index_training):])
             
             counter_col += 1
         counter_row +=1
     if real:
         break
 
-if output_structure == "Vanilla":
-    np.round(error_mat_test_org.transpose() * 1000, 3)
-else:
-    np.round(error_mat_test_smooth.transpose() * 1000, 3)
+np.round(error_mat_test_org.transpose() * 1000, 3) if output_structure == "Vanilla" else np.round(error_mat_test_smooth.transpose() * 1000, 3)
+    
 
 
 
