@@ -1,7 +1,5 @@
 # SAND
 
-Zip of data, checkpoints, and plots are in: https://drive.google.com/drive/folders/1apdcbxM6sMPA1CRFUHDffTtlfgmGetRJ?usp=share_link
-
 ## Generate the data
 The data generating code is in `R_code/Simulation`. Run `get_all_data()` from `get_all_data.R` to generate all simulation data.
 
