@@ -1,6 +1,7 @@
 # SAND
 
-## Generate the data
+## 1. Generate the data
+### 1.1 Simulation data
 The data generating code is in `R_code/Simulation`. Run `get_all_data()` from `get_all_data.R` to generate all simulation data.
 
 ## Train the model -- Use train.py
