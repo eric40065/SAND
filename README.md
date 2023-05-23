@@ -24,13 +24,15 @@ After defining the above argument, use `py_code/train.py` to train the network. 
 # 3. Get estimators from PACE/1DS/MICE.
 In both `R_code/SimulationAnalysis.R` and `R_code/UKDataAnalysis.R`, we define the function `do_analysis()` to run the analyses.
 - Inputs:
-  * Argument `data_name_list` from `R_code/SimulationAnalysis.R` takes a vector of data names. The options are `HighDim_E`, `LowDim_G`, `HighDim_G`, `LowDim_E`, `LowDim_T`, `HighDim_T`.
-  * Argument `data_name_list` from `R_code/UKDataAnalysis.R` takes `UK` as the input.
+  * Arguments `data_name_list` and `dense_sparse_list` specifies the dataset:
+    ** `data_name_list` from `R_code/SimulationAnalysis.R` takes a vector of data names. The options are `HighDim_E`, `LowDim_G`, `HighDim_G`, `LowDim_E`, `LowDim_T`, `HighDim_T`.
+    ** `data_name_list` from `R_code/UKDataAnalysis.R` takes `UK` as the input.
+    ** `dense_sparse_list` from `R_code/SimulationAnalysis.R` is by default `list(c("dense", "w_error"), c("sparse", "w_error"), c("dense", "wo_error"), c("sparse", "wo_error"))`.
+    ** `dense_sparse_list` from `R_code/UKAnalysis.R` is by default `c("dense", "sparse")`.
   * Argument `iidt_list` from both functions is by default `c("IID", "NonIID")`, indicating that both iid and non-iid cases are analyzed.
   * Arguments `do_PACE`, `do_1DS`, and `do_MICE` from both functions are `TRUE` by default, indicating all three methods will be run.
-  * Arguments `data_name_list` and `dense_sparse_list` specifies the dataset 
-    - from `R_code/SimulationAnalysis.R` is by default `list(c("dense", "w_error"), c("sparse", "w_error"), c("dense", "wo_error"), c("sparse", "wo_error"))`.
-  * Argument `dense_sparse_list` from `R_code/UKAnalysis.R` is by default `c("dense", "sparse")`.
+  * Argument `split` specify the proportion of training/validation/testing data.
+
   
 
 ![Imputation of different methods](https://github.com/eric40065/FunctionalTransformer/blob/main/Rplot.png)
