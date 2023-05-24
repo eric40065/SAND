@@ -1,7 +1,7 @@
 This README provides an overview of the project structure and instructions for generating and analyzing data, training networks, and evaluating on the testing dataset.
 
 # 1. Generate the Data
-In this project, we use the R programming language for data preprocessing and simulation. Python is employed solely for training the machine learning models.
+In this project, we use the R programming language for data preprocessing and simulation. Python is employed solely for training and evaluating the machine learning models.
 
 ## 1.1 Simulation Data
 To generate simulation data, follow these steps:
