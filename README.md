@@ -1,5 +1,17 @@
 This README provides an overview of the project structure and instructions for generating and analyzing data, training networks, and evaluating on the testing dataset.
 
+# 0. The `.zip` file.
+It contains six folders:
+
+* `R_code` stores all the code ends in `.R`.
+* `py_code` stores all the code ends in `.py`.
+* `Checkpoints` stores the checkpoints of the machine learning methods. It contains three sub-folders: `IID`, `NonIID`, `Tmp`
+  - `IID` and `NonIID` stores the best model along the training procedure. 
+  - `Tmp` stores the checkpoints which are saved every 500 epoches.
+* `Data` stores the simulated data and the real dataset. The real data is included for the convenience.
+* `ImputedData` stores the imputations.
+* `Plots` stores the imputed trajectories and loss functions.
+
 # 1. Generate the Data
 In this project, we use the R programming language for data preprocessing and simulation. Python is employed solely for training and evaluating the machine learning models.
 
@@ -11,6 +23,8 @@ To generate simulation data, follow these steps:
 3. Utilize line 473 to create the simulated dataset.
 
 ## 1.2 Real Data
+For the convenience, we include the real data in the `.zip` file under `Data/IID/RealData/UK` and `Data/NonIID/RealData/UK`. Please go to step 4 directly.
+
 To work with real data, please obtain the UK electricity dataset from [this link](https://www.kaggle.com/datasets/jeanmidev/smart-meters-in-london). Then, follow these steps:
 
 1. Download the data from the `halfhourly_dataset` folder from the above link.
