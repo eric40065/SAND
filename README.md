@@ -29,7 +29,7 @@ To train a transformer-based method (vanilla transformer, transformer with penal
 2. Specify the data to be analyzed in lines 13, 17, and 18.
 3. Define the device in line 21.
 4. Configure the model in lines 26, 30, and 41.
-5. Once the above arguments are defined, use `py_code/train.py` to train the network.
+5. Once the above arguments are defined, run `py_code/train.py` to train the network.
 6. The best checkpoint will be stored in the `Checkpoints` folder.
 
 ## 2.2 Conditional Neural Process
@@ -39,43 +39,62 @@ For training a conditional neural process, follow these instructions:
 2. Specify the data to be analyzed in lines 14, 18, and 19.
 3. Define the device in line 22.
 4. Set up the model in lines 26 to 35.
-5. After defining the necessary arguments, use `py_code/NPtrain.py` to train the network.
+5. After defining the necessary arguments, run `py_code/NPtrain.py` to train the network.
 6. The best checkpoint will be saved in the `Checkpoints` folder under the method name CNP.
 
 # 3. Evaluate on the Testing Dataset
 In this section, we evaluate the trained networks on the testing dataset.
 
-# 3.1 Transformer-based Network
-To obtain the mean squared error (MSE) and imputations for the training and testing datasets, follow these steps:
+## 3.1 Transformer-based Network
+To obtain the mean squared error (MSE) and imputations for the training and testing datasets using the transformer-based network, please follow these steps:
 
-1. `Execute py_code/ImputeAllData.py`.
+1. Execute the `py_code/ImputeAllData.py` script.
 2. Use the `evaluation()` function to retrieve the MSE of the training and testing datasets and store the imputations in the `ImputedData` folder.
-3. The function call should be in the following format: `result = evaluation(data_name, iidt, output_structure="SAND", d=60, split=(90, 5, 5), cuda_device="cpu")`.
-4. Adjust the arguments `data_name` and `iidt` to match your data.
-5. Specify the desired model structure using the `output_structure` argument (options: `SAND`, `Vanilla`, `SelfAtt`).
-6. Set the embedding dimensionality `d` to match the value used in `py_code/train.py`.
-7. Define the proportion of training/validation/testing datasets in the `split` argument, consistent with the settings in `py_code/train.py`.
+  * The function call should be in the following format: `result = evaluation(data_name, iidt, output_structure="SAND", d=60, split=(90, 5, 5), cuda_device="cpu")`.
+  * Adjust the `data_name` and `iidt` arguments to match your specific data.
+  * Specify the desired model structure using the `output_structure` argument (options: `SAND`, `Vanilla`, `SelfAtt`).
+  * Set the embedding dimensionality `d` to match the value used in `py_code/train.py`.
+  * Define the proportion of training/validation/testing datasets in the `split` argument, ensuring it aligns with the settings in `py_code/train.py`.
+
+### Outputs:
+The `evaluation()` function will return a dictionary containing TrainingLoss and TestingLoss, which store the MSE of the training and testing data, respectively.
 
 ## 3.2 Conditional Neural Process
+To calculate the mean squared error (MSE) of the training and testing datasets on the Conditional Neural Process (CNP) model, please follow these steps:
+
+1. Execute the `NPImputedAllData.py` script.
+2. In line 8 of the script, specify the proportion of training/validation/testing datasets in the `split` argument. It is crucial to ensure that these proportions align with the settings used in `py_code/NPtrain.py` to maintain consistency in the dataset splits.
+3. In line 10 of the script, define the appropriate data for analysis.
+
+After running the `NPImputedAllData.py` script, the variable `error_mat_test` will store the MSE values for the all datasets.
 
 # 4. Get estimators from PACE/1DS/MICE.
-In both `R_code/SimulationAnalysis.R` and `R_code/UKDataAnalysis.R`, we define the function `do_analysis()` to run the analyses.
-- Usage:
-  * `result = do_analysis()`
-- Inputs:
-  * Arguments `data_name_list` and `dense_sparse_list` specifies the dataset:
-  	* `data_name_list` from `R_code/SimulationAnalysis.R` takes a vector of data names. The options are `HighDim_E`, `LowDim_G`, `HighDim_G`, `LowDim_E`, `LowDim_T`, `HighDim_T`.
-   	* `data_name_list` from `R_code/UKDataAnalysis.R` takes `UK` as the input.
-   	* `dense_sparse_list` from `R_code/SimulationAnalysis.R` is by default `list(c("dense", "w_error"), c("sparse", "w_error"), c("dense", "wo_error"), c("sparse", "wo_error"))`.
-   	* `dense_sparse_list` from `R_code/UKAnalysis.R` is by default `c("dense", "sparse")`.
-  * Argument `iidt_list` from both functions is by default `c("IID", "NonIID")`, indicating that both iid and non-iid cases are analyzed.
-  * Arguments `do_PACE`, `do_1DS`, and `do_MICE` from both functions are `TRUE` by default, indicating all three methods will be run.
-  * Argument `split` specify the proportion of training/validation/testing data.
-- Outputs:
-  * `result` contains a list of `MSE` storing the MSEs of training and testing data under different settings.
- 
+To obtain estimators from PACE, 1DS, and MICE methods, the do_analysis() function is defined in both `R_code/SimulationAnalysis.R` and `R_code/UKDataAnalysis.R` scripts. This function allows for running the analyses and retrieving the results.
 
-  
+### Usage:
+To use the do_analysis() function, follow these examples:
+* In `R_code/SimulationAnalysis.R`, lines 476, 479, and 483 demonstrate the usage of `do_analysis()` function.
+* In `R_code/UKDataAnalysis.R`, lines 288 demonstrate the usage of `do_analysis()` function.
 
-Thank you for participating in our research project! If you have any questions, feel free to reach out to us.
+### Inputs:
+* `data_name_list`: Specifies the dataset. Options:
+  * In `R_code/SimulationAnalysis.R`: `data_name_list` takes a vector of data names, including `HighDim_E`, `LowDim_G`, `HighDim_G`, `LowDim_E`, `LowDim_T`, and `HighDim_T`.
+  * In `R_code/UKDataAnalysis.R`: `data_name_list` should be set as `UK`.
+* `dense_sparse_list`: Specifies the data type. Default values:
+  * In `R_code/SimulationAnalysis.R`: `list(c("dense", "w_error"), c("sparse", "w_error"), c("dense", "wo_error"), c("sparse", "wo_error"))`.
+  * In `R_code/UKDataAnalysis.R`: `c("dense", "sparse")`.
+* `iidt_list`: Specifies the analysis type. Default value: `c("IID", "NonIID")`, indicating analysis for both iid and non-iid cases.
+* `do_PACE`, `do_1DS`, and `do_MICE`: Specifies whether to run PACE, 1DS, and MICE methods, respectively. Default value: `TRUE` for all methods.
+* `split`: Specifies the proportion of training/validation/testing data.
 
+### Outputs:
+The `do_analysis()` function returns a list result containing the MSE values for the training and testing data under different settings.
+
+## 4.1 Using PACE and 1DS to Posteriorly Polish the Imputation from a Transformer-based Model
+In `R_code/SimulationAnalysis.R`, the `do_analysis()` function is used to conduct posterior analysis using PACE and 1DS methods to refine the imputations from a Transformer-based model.
+
+To achieve this, set `do_PACE`, `do_1DS`, and `do_MICE` to `FALSE` and `do_trans` to `TRUE`, as shown in line 479 of the code.
+
+Please make the necessary adjustments to the function call and arguments based on your specific requirements and data.
+
+If you have any further questions or need additional guidance, please let me know.
