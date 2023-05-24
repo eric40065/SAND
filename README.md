@@ -28,7 +28,7 @@ To train a transformer-based method (vanilla transformer, transformer with penal
 1. Open `py_code/train.py`.
 2. Specify the data to be analyzed in lines 13, 17, and 18.
 3. Define the device in line 21.
-4. Configure the model in lines 26, 30, and 41.
+4. Configure the model in lines 26, 30, 41, and 46.
 5. Once the above arguments are defined, run `py_code/train.py` to train the network.
 6. The best checkpoint will be stored in the `Checkpoints` folder.
 
